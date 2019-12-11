@@ -10,7 +10,8 @@ const sass = require('gulp-sass');
 const sourcemaps = require('gulp-sourcemaps');
 const uglify = require('gulp-uglify');
 const browserSync = require('browser-sync').create();
-const polyfiller = require('gulp-polyfiller');
+const babel = require('gulp-babel')
+const webpack = require('webpack-stream')
 
 // File path variables
 const files = {
@@ -34,10 +35,16 @@ function scssTask(){
 
 // JS task
 
-function jsTask(){
-    return src(files.jsPath)
+function jsTask(done) {
+  src(files.jsPath)
+    .pipe(babel({
+      presets: ['@babel/env']
+    }))
+    .pipe(webpack())
           .pipe(concat('main.js'))
-          .pipe(dest('build/js')
+    .pipe(dest('build/js'));
+  done()
+}
           );
 }
 
