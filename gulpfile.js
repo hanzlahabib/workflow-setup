@@ -23,7 +23,8 @@ const files = {
   htmlIndexPath: 'src/index.html',
   htmlPagesPath: 'src/pages/**/*.html',
   htmlPath: 'src/**/*.html',
-  imagePath: 'src/images/*'
+  imagePath: 'src/images/*',
+  jsonData : 'src/data/pages.json'
 }
 // BrowserSync Hot Reloading
 
@@ -47,7 +48,7 @@ function scssTask(done) {
 
 function imageOpt(done) {
   src('src/images/*')
-    .pipe(imagemin())
+    // .pipe(imagemin())
     .pipe(dest('build/images'));
   done()
 }
@@ -57,11 +58,15 @@ function imageOpt(done) {
 
 function jsTask(done) {
   src(files.jsPath)
+    .pipe(sourcemaps.init())
     .pipe(babel({
       presets: ['@babel/env']
     }))
-    .pipe(webpack())
+    .pipe(webpack({
+      mode: 'development'
+    }))
     .pipe(concat('main.js'))
+    .pipe(sourcemaps.write('.'))
     .pipe(dest('build/js'));
   done()
 }
@@ -73,9 +78,17 @@ function htmlIndexTask(done) {
 
 }
 
+function jsonData(done) {
+  src(files.jsonData, { allowEmpty: true })
+    .pipe(dest('build/data/', { allowEmpty: true })
+    );
+  done();
+
+}
+
 function htmlPagesTask(done) {
   src(files.htmlPagesPath, { allowEmpty: true })
-    .pipe(dest('./build', { allowEmpty: true })
+    .pipe(dest('./build/pages', { allowEmpty: true })
     );
   done();
 }
@@ -101,9 +114,9 @@ function reload(done) {
 // Cachebusting task
 const cbString = new Date().getTime();
 function cacheBustTask(done) {
-  src(['build/index.html'], { allowEmpty: true })
-    .pipe(replace(/cb=\d+/g, 'cb=' + cbString))
-    .pipe(dest('.'))
+  src(['./build/index.html'], { allowEmpty: true })
+    .pipe(replace(/nt=\d+/g, 'nt=' + cbString))
+    .pipe(dest('./build'))
   done()
 }
 // watch task
@@ -114,15 +127,19 @@ function watchTask(done) {
   done()
 }
 
+function killProcess(done){
+  done();
+  process.exit(0)
+}
 // Default task
 
 exports.dev = series(
-  parallel(htmlPagesTask, htmlIndexTask, scssTask, jsTask, browserSyncTask),
+  parallel(htmlPagesTask, htmlIndexTask, scssTask, jsTask, browserSyncTask,imageOpt, jsonData),
   cacheBustTask,
   watchTask
 )
 
 exports.build = series(
-  parallel(htmlPagesTask, scssTask, jsTask, imageOpt),
+  parallel(htmlPagesTask,htmlIndexTask, scssTask, jsTask, imageOpt, jsonData),
   cacheBustTask,
 )
